@@ -1,71 +1,48 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Api;
+
 use App\Http\Requests\StoreCategoryRequest;
 use App\Http\Requests\UpdateCategoryRequest;
 use App\Services\CategoryService;
-use App\Models\Category;
-use Illuminate\Http\Request;
 
-class CategoryController extends Controller
+class CategoryController extends BaseController
 {
     protected CategoryService $svc;
 
-public function __construct(CategoryService $svc)
-{
-    $this->svc = $svc;
-}
+    public function __construct(CategoryService $svc)
+    {
+        $this->svc = $svc;
+    }
+
     public function index()
     {
-        return response()->json(Category::all());
+        return $this->success($this->svc->all(), "Daftar kategori");
     }
 
     public function store(StoreCategoryRequest $req)
-{
-    $cat = $this->svc->create($req->validated());
-
-    return response()->json([
-        'status' => 'success',
-        'data' => $cat,
-        'message' => 'Kategori berhasil dibuat'
-    ], 201);
-}
+    {
+        $cat = $this->svc->create($req->validated());
+        return $this->success($cat, "Kategori berhasil dibuat", 201);
+    }
 
     public function show($id)
-{
-    try {
-
-        $cat = $this->svc->find($id);
-
-        return response()->json([
-            'status' => 'success',
-            'data' => $cat,
-            'message' => 'Berhasil menarik satu data kategori'
-        ]);
-
-    } catch (\Exception $e) {
-
-        return response()->json([
-            'status' => 'error',
-            'data' => null,
-            'message' => $e->getMessage()
-        ], 404);
-    }
-}
-
-    public function update(Request $request, $id)
     {
-        $category = Category::findOrFail($id);
-        $category->update($request->all());
-        return response()->json($category);
+        $cat = $this->svc->find($id);
+        if (!$cat) return $this->error("Kategori tidak ditemukan", 404);
+
+        return $this->success($cat);
+    }
+
+    public function update(UpdateCategoryRequest $req, $id)
+    {
+        $cat = $this->svc->update($id, $req->validated());
+        return $this->success($cat, "Kategori diperbarui");
     }
 
     public function destroy($id)
     {
-        Category::findOrFail($id)->delete();
-
-        return response()->json([
-            'message' => 'Kategori berhasil dihapus'
-        ]);
+        $this->svc->delete($id);
+        return $this->success(null, "Kategori dihapus", 204);
     }
 }
